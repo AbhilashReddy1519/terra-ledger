@@ -1,0 +1,37 @@
+# Secrets - never commit
+.env
+*.key
+*.pem
+
+# Java / Maven
+target/
+*.class
+*.jar
+
+# Node
+node_modules/
+dist/
+.cache/
+frontend/dist/
+contracts/node_modules/
+contracts/cache/
+contracts/artifacts/
+contracts/typechain-types/
+
+# Python
+__pycache__/
+*.pyc
+ocr-service/.venv/
+ocr-service/venv/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Docker
+*.log
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,115 @@
+services:
+
+  # ── MySQL ──────────────────────────────────────────────────────────────────
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-changeme}
+      MYSQL_DATABASE:      ${MYSQL_DATABASE:-terraledger}
+      MYSQL_USER:          ${MYSQL_USER:-terraledger}
+      MYSQL_PASSWORD:      ${MYSQL_PASSWORD:-changeme}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost",
+             "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-changeme}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # ── IPFS (Kubo) ────────────────────────────────────────────────────────────
+  ipfs:
+    image: ipfs/kubo:v0.32.0
+    restart: unless-stopped
+    environment:
+      IPFS_PROFILE: server
+    ports:
+      - "4001:4001"   # swarm
+      - "5001:5001"   # API
+      - "8081:8080"   # gateway (avoid clash with backend on 8080)
+    volumes:
+      - ipfs_data:/data/ipfs
+    healthcheck:
+      test: ["CMD", "ipfs", "id"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+
+  # ── Hardhat local chain ────────────────────────────────────────────────────
+  hardhat:
+    build:
+      context: ./contracts
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8545:8545"
+    volumes:
+      - deployments:/app/deployments
+    healthcheck:
+      test: ["CMD-SHELL", "test -f /app/deployments/localhost.json || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
+  # ── OCR service ────────────────────────────────────────────────────────────
+  ocr-service:
+    build:
+      context: ./ocr-service
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ── Spring Boot backend ────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      MYSQL_HOST:     mysql
+      MYSQL_PORT:     "3306"
+      HARDHAT_RPC_URL: http://hardhat:8545
+      OCR_SERVICE_URL: http://ocr-service:8000
+      IPFS_API_URL:    http://ipfs:5001
+    volumes:
+      - deployments:/deployments:ro
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      hardhat:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+
+  # ── React frontend (production build served by nginx) ─────────────────────
+  frontend:
+    build:
+      context: ./frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+volumes:
+  mysql_data:
+  ipfs_data:
+  deployments:
