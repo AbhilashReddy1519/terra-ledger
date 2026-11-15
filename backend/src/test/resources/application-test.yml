@@ -1,0 +1,24 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;MODE=MySQL
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    database-platform: org.hibernate.dialect.H2Dialect
+  flyway:
+    enabled: false   # Flyway uses MySQL syntax; skip in unit tests
+
+app:
+  jwt:
+    secret: test-secret-at-least-32-characters-long-for-HS256
+    expiry-seconds: 3600
+  hardhat:
+    rpc-url: http://localhost:8545
+    private-key: "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
+  ipfs:
+    api-url: http://localhost:5001
+  ocr:
+    service-url: http://localhost:8000
