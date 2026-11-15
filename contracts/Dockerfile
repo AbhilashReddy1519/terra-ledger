@@ -3,6 +3,6 @@ WORKDIR /app
 COPY package.json ./
 RUN npm install
 COPY . .
-RUN chmod +x entrypoint.sh && npx hardhat compile
+RUN sed -i 's/\r$//' entrypoint.sh && chmod +x entrypoint.sh && npx hardhat compile
 EXPOSE 8545
 CMD ["./entrypoint.sh"]

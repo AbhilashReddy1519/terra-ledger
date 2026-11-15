@@ -35,3 +35,4 @@ ocr-service/venv/
 # OS
 .DS_Store
 Thumbs.db
+docs/
