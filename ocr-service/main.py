@@ -1,39 +1,44 @@
 """
-ocr-service  –  M0 walking skeleton
-Provides a /health endpoint and a stub /ocr/extract endpoint.
-Real Tesseract + OpenCV processing is wired in M2.
+ocr-service – M2 Implementation
+Provides /health and /ocr/extract endpoint using OpenCV preprocessing,
+Tesseract OCR, and regex field extraction for land record deeds.
 """
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.responses import JSONResponse
 import pytesseract
-from PIL import Image
-import io
-import cv2
-import numpy as np
+from extractor import extract_document
 
-app = FastAPI(title="terra-ledger OCR service", version="0.1.0")
+app = FastAPI(title="terra-ledger OCR service", version="0.2.0")
 
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "tesseract_version": str(pytesseract.get_tesseract_version())}
+    return {
+        "status": "ok",
+        "tesseract_version": str(pytesseract.get_tesseract_version())
+    }
 
 
 @app.post("/ocr/extract")
 async def extract(file: UploadFile = File(...)):
     """
-    M0 stub: accepts any image, runs a quick Tesseract pass,
-    returns raw text.  Field extraction is added in M2.
+    Accepts scanned land records (PDF, PNG, JPG/JPEG).
+    Preprocesses with OpenCV, performs OCR via Tesseract, and extracts
+    structured land record fields.
     """
-    if not file.content_type.startswith("image/"):
-        raise HTTPException(status_code=400, detail="Only image files are accepted")
+    filename = file.filename or "upload.png"
+    lower_name = filename.lower()
+    allowed_extensions = (".pdf", ".png", ".jpg", ".jpeg", ".tif", ".tiff")
+    
+    if not any(lower_name.endswith(ext) for ext in allowed_extensions):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid file type. Supported types: {', '.join(allowed_extensions)}"
+        )
 
-    contents = await file.read()
-    image = Image.open(io.BytesIO(contents))
-    raw_text = pytesseract.image_to_string(image)
-
-    return JSONResponse({
-        "raw_text": raw_text,
-        "fields":   {},          # populated in M2
-        "note":     "M0 stub – field extraction added in M2"
-    })
+    try:
+        contents = await file.read()
+        result = extract_document(contents, filename)
+        return JSONResponse(result)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"OCR extraction failed: {str(e)}")
