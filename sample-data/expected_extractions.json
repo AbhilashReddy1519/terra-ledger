@@ -1,0 +1,112 @@
+{
+  "REC-001": {
+    "id": "REC-001",
+    "filename": "record_01_sale_deed.png",
+    "deed_type": "Sale Deed",
+    "owner_name": "Ramesh Kumar Sharma",
+    "survey_no": "SY-142/3A",
+    "area": "2400 Sq. Ft.",
+    "boundaries": "North: 40ft Main Road, South: Plot 15, East: Sy 142/3B, West: Private Property",
+    "registration_date": "2024-03-15",
+    "stamp_duty": "125000"
+  },
+  "REC-002": {
+    "id": "REC-002",
+    "filename": "record_02_gift_deed.png",
+    "deed_type": "Gift Deed",
+    "owner_name": "Sunita Devi",
+    "survey_no": "SY-88/1B",
+    "area": "1800 Sq. Ft.",
+    "boundaries": "North: Municipal Park, South: Sy 88/1C, East: 30ft Road, West: Open Plot 12",
+    "registration_date": "2023-11-20",
+    "stamp_duty": "45000"
+  },
+  "REC-003": {
+    "id": "REC-003",
+    "filename": "record_03_partition_deed.png",
+    "deed_type": "Partition Deed",
+    "owner_name": "Vikramaditya Rao",
+    "survey_no": "PLOT-42A",
+    "area": "3200 Sq. Ft.",
+    "boundaries": "North: Sector 4 Road, South: Plot 42-B, East: Plot 41, West: Drainage Canal",
+    "registration_date": "2024-01-10",
+    "stamp_duty": "80000"
+  },
+  "REC-004": {
+    "id": "REC-004",
+    "filename": "record_04_conveyance_deed.png",
+    "deed_type": "Conveyance Deed",
+    "owner_name": "Ananya Deshmukh",
+    "survey_no": "KHASRA-512/7",
+    "area": "1.25 Acres",
+    "boundaries": "North: River Canal, South: Agricultural Land, East: Village Road, West: Forest Border",
+    "registration_date": "2023-08-05",
+    "stamp_duty": "210000"
+  },
+  "REC-005": {
+    "id": "REC-005",
+    "filename": "record_05_title_deed.png",
+    "deed_type": "Title Deed",
+    "owner_name": "Mohammed Farooq Khan",
+    "survey_no": "SY-209/4",
+    "area": "4500 Sq. Ft.",
+    "boundaries": "North: National Highway 44, South: Sy 209/5, East: Service Lane, West: Sy 208",
+    "registration_date": "2024-05-22",
+    "stamp_duty": "315000"
+  },
+  "REC-006": {
+    "id": "REC-006",
+    "filename": "record_06_sale_deed.png",
+    "deed_type": "Sale Deed",
+    "owner_name": "Priya Sunderraj",
+    "survey_no": "PLOT-108",
+    "area": "1500 Sq. Ft.",
+    "boundaries": "North: 20ft Cross Road, South: Plot 109, East: Plot 105, West: Avenue Road",
+    "registration_date": "2024-02-18",
+    "stamp_duty": "95000"
+  },
+  "REC-007": {
+    "id": "REC-007",
+    "filename": "record_07_settlement_deed.png",
+    "deed_type": "Settlement Deed",
+    "owner_name": "Harpreet Singh Gill",
+    "survey_no": "SY-73/2",
+    "area": "2.50 Acres",
+    "boundaries": "North: Farm Road, South: Canal Waterway, East: Sy 73/3, West: Sy 72/1",
+    "registration_date": "2023-09-30",
+    "stamp_duty": "150000"
+  },
+  "REC-008": {
+    "id": "REC-008",
+    "filename": "record_08_sale_deed.png",
+    "deed_type": "Sale Deed",
+    "owner_name": "Rajeshwari Venkatesh",
+    "survey_no": "SY-315/1A",
+    "area": "2800 Sq. Ft.",
+    "boundaries": "North: Layout Boundary, South: Internal Road, East: Plot 22, West: Sy 315/1B",
+    "registration_date": "2024-06-12",
+    "stamp_duty": "160000"
+  },
+  "REC-009": {
+    "id": "REC-009",
+    "filename": "record_09_conveyance_deed.pdf",
+    "deed_type": "Conveyance Deed",
+    "owner_name": "Amit Arvind Joshi",
+    "survey_no": "PLOT-87C",
+    "area": "2000 Sq. Ft.",
+    "boundaries": "North: Sector 9 Park, South: Sector Road, East: Plot 87-B, West: Plot 88",
+    "registration_date": "2024-04-01",
+    "stamp_duty": "110000"
+  },
+  "REC-010": {
+    "id": "REC-010",
+    "filename": "record_10_gift_deed.pdf",
+    "deed_type": "Gift Deed",
+    "owner_name": "Lakshmi Narayanan",
+    "survey_no": "KHASRA-94/6",
+    "area": "3600 Sq. Ft.",
+    "boundaries": "North: Panchayat Road, South: Khasra 94/7, East: Khasra 95, West: Water Tank",
+    "registration_date": "2023-12-14",
+    "stamp_duty": "60000"
+  }
+}

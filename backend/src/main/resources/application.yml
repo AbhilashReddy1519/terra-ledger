@@ -34,3 +34,5 @@ app:
     api-url: ${IPFS_API_URL:http://localhost:5001}
   ocr:
     service-url: ${OCR_SERVICE_URL:http://localhost:8000}
+  upload:
+    dir: ${UPLOAD_DIR:./uploads}

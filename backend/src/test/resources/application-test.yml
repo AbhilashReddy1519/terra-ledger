@@ -22,3 +22,5 @@ app:
     api-url: http://localhost:5001
   ocr:
     service-url: http://localhost:8000
+  upload:
+    dir: ./target/test-uploads
