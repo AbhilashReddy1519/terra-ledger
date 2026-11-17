@@ -20,6 +20,7 @@ public class RecordResponse {
     private String fileContentType;
     private Long fileSize;
     private String sha256Hash;
+    private String ipfsCid;
     private Integer currentVersion;
     private Instant createdAt;
     private Instant updatedAt;
@@ -41,6 +42,7 @@ public class RecordResponse {
         resp.setFileContentType(record.getFileContentType());
         resp.setFileSize(record.getFileSize());
         resp.setSha256Hash(record.getSha256Hash());
+        resp.setIpfsCid(record.getIpfsCid());
         resp.setCurrentVersion(record.getCurrentVersion());
         resp.setCreatedAt(record.getCreatedAt());
         resp.setUpdatedAt(record.getUpdatedAt());
@@ -93,6 +95,9 @@ public class RecordResponse {
 
     public String getSha256Hash() { return sha256Hash; }
     public void setSha256Hash(String sha256Hash) { this.sha256Hash = sha256Hash; }
+
+    public String getIpfsCid() { return ipfsCid; }
+    public void setIpfsCid(String ipfsCid) { this.ipfsCid = ipfsCid; }
 
     public Integer getCurrentVersion() { return currentVersion; }
     public void setCurrentVersion(Integer currentVersion) { this.currentVersion = currentVersion; }
