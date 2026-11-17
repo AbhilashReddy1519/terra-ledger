@@ -1,6 +1,7 @@
 package com.terraledger.repository;
 
 import com.terraledger.domain.LandRecord;
+import com.terraledger.domain.RecordStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -10,4 +11,6 @@ import java.util.List;
 public interface LandRecordRepository extends JpaRepository<LandRecord, String> {
     List<LandRecord> findByUploadedByOrderByCreatedAtDesc(String uploadedBy);
     List<LandRecord> findAllByOrderByCreatedAtDesc();
+    List<LandRecord> findByStatusOrderByCreatedAtDesc(RecordStatus status);
+    List<LandRecord> findByUploadedByAndStatusOrderByCreatedAtDesc(String uploadedBy, RecordStatus status);
 }

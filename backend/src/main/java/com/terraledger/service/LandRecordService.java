@@ -3,9 +3,9 @@ package com.terraledger.service;
 import com.terraledger.domain.LandRecord;
 import com.terraledger.domain.OcrExtraction;
 import com.terraledger.domain.RecordStatus;
-import com.terraledger.domain.Role;
 import com.terraledger.dto.FieldUpdateRequest;
 import com.terraledger.dto.RecordResponse;
+import com.terraledger.dto.ReviewDecisionRequest;
 import com.terraledger.repository.LandRecordRepository;
 import com.terraledger.security.UserPrincipal;
 import org.slf4j.Logger;
@@ -44,13 +44,16 @@ public class LandRecordService {
 
     private final LandRecordRepository landRecordRepository;
     private final OcrClientService ocrClientService;
+    private final AuditService auditService;
     private final Path uploadDir;
 
     public LandRecordService(LandRecordRepository landRecordRepository,
                              OcrClientService ocrClientService,
+                             AuditService auditService,
                              @Value("${app.upload.dir:./uploads}") String uploadDirPath) {
         this.landRecordRepository = landRecordRepository;
         this.ocrClientService = ocrClientService;
+        this.auditService = auditService;
         this.uploadDir = Paths.get(uploadDirPath);
         try {
             Files.createDirectories(this.uploadDir);
@@ -113,6 +116,15 @@ public class LandRecordService {
 
             LandRecord saved = landRecordRepository.save(record);
             log.info("Uploaded record {} by user {}, surveyNo={}", saved.getId(), currentUser.getId(), saved.getSurveyNo());
+
+            auditService.logEvent(
+                    currentUser.getEmail(),
+                    "UPLOAD",
+                    "LandRecord",
+                    saved.getId(),
+                    "Record uploaded: filename=" + originalFilename + ", sha256=" + sha256Hash
+            );
+
             return RecordResponse.fromEntity(saved);
 
         } catch (IOException e) {
@@ -134,10 +146,17 @@ public class LandRecordService {
     }
 
     @Transactional(readOnly = true)
-    public List<RecordResponse> listRecords(UserPrincipal currentUser) {
-        List<LandRecord> records = currentUser.isOfficerOrAdmin()
-                ? landRecordRepository.findAllByOrderByCreatedAtDesc()
-                : landRecordRepository.findByUploadedByOrderByCreatedAtDesc(currentUser.getId());
+    public List<RecordResponse> listRecords(RecordStatus statusFilter, UserPrincipal currentUser) {
+        List<LandRecord> records;
+        if (currentUser.isOfficerOrAdmin()) {
+            records = (statusFilter != null)
+                    ? landRecordRepository.findByStatusOrderByCreatedAtDesc(statusFilter)
+                    : landRecordRepository.findAllByOrderByCreatedAtDesc();
+        } else {
+            records = (statusFilter != null)
+                    ? landRecordRepository.findByUploadedByAndStatusOrderByCreatedAtDesc(currentUser.getId(), statusFilter)
+                    : landRecordRepository.findByUploadedByOrderByCreatedAtDesc(currentUser.getId());
+        }
 
         return records.stream().map(RecordResponse::fromEntity).toList();
     }
@@ -182,6 +201,75 @@ public class LandRecordService {
 
         LandRecord saved = landRecordRepository.save(record);
         log.info("Updated fields for record {} by user {}", id, currentUser.getId());
+
+        auditService.logEvent(
+                currentUser.getEmail(),
+                "FIELD_UPDATE",
+                "LandRecord",
+                saved.getId(),
+                "Fields updated: " + (request != null ? request.getFields() : "{}")
+        );
+
+        return RecordResponse.fromEntity(saved);
+    }
+
+    @Transactional
+    public RecordResponse approveRecord(String id, ReviewDecisionRequest request, UserPrincipal currentUser) {
+        if (!currentUser.isOfficerOrAdmin()) {
+            throw new AccessDeniedException("Only officers and administrators can approve records");
+        }
+
+        LandRecord record = landRecordRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Record not found: " + id));
+
+        if (record.getStatus() != RecordStatus.PENDING_REVIEW) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Cannot approve record in status " + record.getStatus() + ". Only PENDING_REVIEW records can be approved.");
+        }
+
+        record.setStatus(RecordStatus.APPROVED);
+        LandRecord saved = landRecordRepository.save(record);
+
+        String remarks = (request != null && request.getRemarks() != null) ? request.getRemarks() : "Approved by officer";
+        auditService.logEvent(
+                currentUser.getEmail(),
+                "APPROVE",
+                "LandRecord",
+                saved.getId(),
+                remarks
+        );
+
+        log.info("Record {} approved by officer {}", id, currentUser.getEmail());
+        return RecordResponse.fromEntity(saved);
+    }
+
+    @Transactional
+    public RecordResponse rejectRecord(String id, ReviewDecisionRequest request, UserPrincipal currentUser) {
+        if (!currentUser.isOfficerOrAdmin()) {
+            throw new AccessDeniedException("Only officers and administrators can reject records");
+        }
+
+        LandRecord record = landRecordRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Record not found: " + id));
+
+        if (record.getStatus() != RecordStatus.PENDING_REVIEW) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Cannot reject record in status " + record.getStatus() + ". Only PENDING_REVIEW records can be rejected.");
+        }
+
+        record.setStatus(RecordStatus.REJECTED);
+        LandRecord saved = landRecordRepository.save(record);
+
+        String remarks = (request != null && request.getRemarks() != null) ? request.getRemarks() : "Rejected by officer";
+        auditService.logEvent(
+                currentUser.getEmail(),
+                "REJECT",
+                "LandRecord",
+                saved.getId(),
+                remarks
+        );
+
+        log.info("Record {} rejected by officer {}", id, currentUser.getEmail());
         return RecordResponse.fromEntity(saved);
     }
 
