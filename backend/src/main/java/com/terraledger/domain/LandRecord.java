@@ -51,6 +51,9 @@ public class LandRecord {
     @Column(name = "storage_path", length = 500)
     private String storagePath;
 
+    @Column(name = "ipfs_cid", length = 100)
+    private String ipfsCid;
+
     @Column(name = "current_version", nullable = false)
     private Integer currentVersion = 0;
 
@@ -110,6 +113,9 @@ public class LandRecord {
 
     public String getStoragePath() { return storagePath; }
     public void setStoragePath(String storagePath) { this.storagePath = storagePath; }
+
+    public String getIpfsCid() { return ipfsCid; }
+    public void setIpfsCid(String ipfsCid) { this.ipfsCid = ipfsCid; }
 
     public Integer getCurrentVersion() { return currentVersion; }
     public void setCurrentVersion(Integer currentVersion) { this.currentVersion = currentVersion; }

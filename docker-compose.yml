@@ -83,6 +83,7 @@ services:
       HARDHAT_RPC_URL: http://hardhat:8545
       OCR_SERVICE_URL: http://ocr-service:8000
       IPFS_API_URL:    http://ipfs:5001
+      DOCUMENT_ENCRYPTION_KEY: ${DOCUMENT_ENCRYPTION_KEY:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
     volumes:
       - deployments:/deployments:ro
     ports:
