@@ -32,6 +32,8 @@ app:
     private-key: ${BACKEND_WALLET_PRIVATE_KEY:0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80}
   ipfs:
     api-url: ${IPFS_API_URL:http://localhost:5001}
+  encryption:
+    master-key: ${DOCUMENT_ENCRYPTION_KEY:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
   ocr:
     service-url: ${OCR_SERVICE_URL:http://localhost:8000}
   upload:

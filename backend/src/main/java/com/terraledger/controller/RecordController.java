@@ -1,13 +1,11 @@
 package com.terraledger.controller;
 
 import com.terraledger.domain.RecordStatus;
-import com.terraledger.dto.AuditEventResponse;
-import com.terraledger.dto.FieldUpdateRequest;
-import com.terraledger.dto.RecordResponse;
-import com.terraledger.dto.ReviewDecisionRequest;
+import com.terraledger.dto.*;
 import com.terraledger.security.UserPrincipal;
 import com.terraledger.service.AuditService;
 import com.terraledger.service.LandRecordService;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -96,5 +94,27 @@ public class RecordController {
         landRecordService.getRecord(id, currentUser);
         List<AuditEventResponse> events = auditService.getEventsForEntity(id);
         return ResponseEntity.ok(events);
+    }
+
+    @GetMapping("/{id}/download")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<byte[]> downloadFile(
+            @PathVariable("id") String id,
+            @AuthenticationPrincipal UserPrincipal currentUser) {
+        DecryptedFile file = landRecordService.downloadDecryptedFile(id, currentUser);
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(file.contentType()))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.filename() + "\"")
+                .header("X-Document-SHA256", file.sha256Hash())
+                .body(file.data());
+    }
+
+    @GetMapping("/{id}/verify-storage")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<StorageVerificationResponse> verifyStorage(
+            @PathVariable("id") String id,
+            @AuthenticationPrincipal UserPrincipal currentUser) {
+        StorageVerificationResponse response = landRecordService.verifyStorageIntegrity(id, currentUser);
+        return ResponseEntity.ok(response);
     }
 }
