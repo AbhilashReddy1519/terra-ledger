@@ -1,8 +1,12 @@
 package com.terraledger.controller;
 
+import com.terraledger.domain.RecordStatus;
+import com.terraledger.dto.AuditEventResponse;
 import com.terraledger.dto.FieldUpdateRequest;
 import com.terraledger.dto.RecordResponse;
+import com.terraledger.dto.ReviewDecisionRequest;
 import com.terraledger.security.UserPrincipal;
+import com.terraledger.service.AuditService;
 import com.terraledger.service.LandRecordService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -19,9 +23,11 @@ import java.util.List;
 public class RecordController {
 
     private final LandRecordService landRecordService;
+    private final AuditService auditService;
 
-    public RecordController(LandRecordService landRecordService) {
+    public RecordController(LandRecordService landRecordService, AuditService auditService) {
         this.landRecordService = landRecordService;
+        this.auditService = auditService;
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -45,8 +51,9 @@ public class RecordController {
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<RecordResponse>> listRecords(
+            @RequestParam(value = "status", required = false) RecordStatus status,
             @AuthenticationPrincipal UserPrincipal currentUser) {
-        List<RecordResponse> response = landRecordService.listRecords(currentUser);
+        List<RecordResponse> response = landRecordService.listRecords(status, currentUser);
         return ResponseEntity.ok(response);
     }
 
@@ -58,5 +65,36 @@ public class RecordController {
             @AuthenticationPrincipal UserPrincipal currentUser) {
         RecordResponse response = landRecordService.updateRecordFields(id, request, currentUser);
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/{id}/approve")
+    @PreAuthorize("hasAnyRole('OFFICER', 'ADMIN')")
+    public ResponseEntity<RecordResponse> approveRecord(
+            @PathVariable("id") String id,
+            @RequestBody(required = false) ReviewDecisionRequest request,
+            @AuthenticationPrincipal UserPrincipal currentUser) {
+        RecordResponse response = landRecordService.approveRecord(id, request, currentUser);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/{id}/reject")
+    @PreAuthorize("hasAnyRole('OFFICER', 'ADMIN')")
+    public ResponseEntity<RecordResponse> rejectRecord(
+            @PathVariable("id") String id,
+            @RequestBody(required = false) ReviewDecisionRequest request,
+            @AuthenticationPrincipal UserPrincipal currentUser) {
+        RecordResponse response = landRecordService.rejectRecord(id, request, currentUser);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{id}/audit")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<AuditEventResponse>> getRecordAuditLog(
+            @PathVariable("id") String id,
+            @AuthenticationPrincipal UserPrincipal currentUser) {
+        // Enforce that only authorized users (owner or officer/admin) can view audit log
+        landRecordService.getRecord(id, currentUser);
+        List<AuditEventResponse> events = auditService.getEventsForEntity(id);
+        return ResponseEntity.ok(events);
     }
 }
