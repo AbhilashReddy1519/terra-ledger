@@ -1,0 +1,21 @@
+CREATE TABLE transfer_requests (
+    id VARCHAR(36) PRIMARY KEY,
+    record_id VARCHAR(36) NOT NULL,
+    seller_user_id VARCHAR(36) NOT NULL,
+    seller_address VARCHAR(64) NOT NULL,
+    buyer_name VARCHAR(255) NOT NULL,
+    buyer_address VARCHAR(64),
+    sale_deed_cid VARCHAR(128),
+    sale_deed_sha256 VARCHAR(64),
+    signing_request_id VARCHAR(36) NOT NULL,
+    status VARCHAR(32) NOT NULL DEFAULT 'AWAITING_SELLER_CONSENT',
+    approved_by VARCHAR(64),
+    tx_hash VARCHAR(66),
+    created_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    updated_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+    INDEX idx_tr_record_id (record_id),
+    INDEX idx_tr_seller_user (seller_user_id),
+    INDEX idx_tr_status (status),
+    CONSTRAINT fk_tr_record FOREIGN KEY (record_id) REFERENCES land_records(id) ON DELETE CASCADE,
+    CONSTRAINT fk_tr_signing_req FOREIGN KEY (signing_request_id) REFERENCES signing_requests(id)
+);

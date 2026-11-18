@@ -11,15 +11,17 @@ async function main() {
   const address = await registry.getAddress();
   console.log("LandRegistry deployed to:", address);
 
-  // Grant deployer and second Hardhat account officer roles
+  // Grant deployer and second Hardhat account officer & registrar roles
   await registry.grantOfficer(deployer.address);
-  console.log("Officer granted to deployer:", deployer.address);
+  await registry.grantRegistrar(deployer.address);
+  console.log("Officer and Registrar granted to deployer:", deployer.address);
 
   const signers = await ethers.getSigners();
   if (signers.length > 1) {
     const officerAddr = signers[1].address;
     await registry.grantOfficer(officerAddr);
-    console.log("Officer granted:", officerAddr);
+    await registry.grantRegistrar(officerAddr);
+    console.log("Officer and Registrar granted to:", officerAddr);
   }
 
   // Write address to a file so the backend can read it
