@@ -35,8 +35,11 @@ ocr-service/venv/
 # OS
 .DS_Store
 Thumbs.db
+
 # Uploads
 uploads/
 backend/uploads/
 
+# Documentation
 docs/
+*Plan.md
