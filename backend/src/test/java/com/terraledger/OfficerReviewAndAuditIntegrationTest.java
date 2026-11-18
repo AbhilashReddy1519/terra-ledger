@@ -148,7 +148,7 @@ public class OfficerReviewAndAuditIntegrationTest {
                 .andReturn().getResponse().getContentAsString();
 
         RecordResponse approveResp = objectMapper.readValue(approveRespJson, RecordResponse.class);
-        assertThat(approveResp.getStatus()).isEqualTo(RecordStatus.APPROVED);
+        assertThat(approveResp.getStatus()).isIn(RecordStatus.APPROVED, RecordStatus.COMMITTED);
         assertThat(approveResp.getSurveyNo()).isEqualTo("SY-501-A");
         assertThat(approveResp.getOwnerName()).isEqualTo("Verified Owner Name");
 

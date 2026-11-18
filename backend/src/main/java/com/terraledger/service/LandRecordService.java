@@ -3,12 +3,10 @@ package com.terraledger.service;
 import com.terraledger.domain.LandRecord;
 import com.terraledger.domain.OcrExtraction;
 import com.terraledger.domain.RecordStatus;
-import com.terraledger.dto.DecryptedFile;
-import com.terraledger.dto.FieldUpdateRequest;
-import com.terraledger.dto.RecordResponse;
-import com.terraledger.dto.ReviewDecisionRequest;
-import com.terraledger.dto.StorageVerificationResponse;
+import com.terraledger.domain.RecordVersion;
+import com.terraledger.dto.*;
 import com.terraledger.repository.LandRecordRepository;
+import com.terraledger.repository.RecordVersionRepository;
 import com.terraledger.security.UserPrincipal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,23 +43,29 @@ public class LandRecordService {
     );
 
     private final LandRecordRepository landRecordRepository;
+    private final RecordVersionRepository recordVersionRepository;
     private final OcrClientService ocrClientService;
     private final AuditService auditService;
     private final EncryptionService encryptionService;
     private final IpfsClientService ipfsClientService;
+    private final ContractGatewayService contractGatewayService;
     private final Path uploadDir;
 
     public LandRecordService(LandRecordRepository landRecordRepository,
+                             RecordVersionRepository recordVersionRepository,
                              OcrClientService ocrClientService,
                              AuditService auditService,
                              EncryptionService encryptionService,
                              IpfsClientService ipfsClientService,
+                             ContractGatewayService contractGatewayService,
                              @Value("${app.upload.dir:./uploads}") String uploadDirPath) {
         this.landRecordRepository = landRecordRepository;
+        this.recordVersionRepository = recordVersionRepository;
         this.ocrClientService = ocrClientService;
         this.auditService = auditService;
         this.encryptionService = encryptionService;
         this.ipfsClientService = ipfsClientService;
+        this.contractGatewayService = contractGatewayService;
         this.uploadDir = Paths.get(uploadDirPath);
         try {
             Files.createDirectories(this.uploadDir);
@@ -150,7 +154,10 @@ public class LandRecordService {
             throw new AccessDeniedException("Access denied: You are not authorized to view this record");
         }
 
-        return RecordResponse.fromEntity(record);
+        String txHash = recordVersionRepository.findTopByRecordIdOrderByVersionDesc(id)
+                .map(RecordVersion::getTxHash)
+                .orElse(null);
+        return RecordResponse.fromEntity(record, txHash);
     }
 
     @Transactional(readOnly = true)
@@ -274,11 +281,33 @@ public class LandRecordService {
         String ipfsCid = ipfsClientService.upload(encryptedBytes, record.getId() + ".enc");
         record.setIpfsCid(ipfsCid);
 
-        record.setStatus(RecordStatus.APPROVED);
+        // Commit record to LandRegistry on-chain
+        CommitResult commitResult = contractGatewayService.commitRecord(
+                record.getId(),
+                ipfsCid,
+                record.getSha256Hash(),
+                currentUser.getEmail()
+        );
+
+        // Store committed version in MySQL cache
+        RecordVersion recordVersion = new RecordVersion(
+                record.getId(),
+                commitResult.version(),
+                ipfsCid,
+                record.getSha256Hash(),
+                commitResult.txHash(),
+                currentUser.getEmail()
+        );
+        recordVersionRepository.save(recordVersion);
+
+        // Update record current version and status
+        record.setCurrentVersion(commitResult.version());
+        record.setStatus(RecordStatus.COMMITTED);
         LandRecord saved = landRecordRepository.save(record);
 
         String remarks = (request != null && request.getRemarks() != null) ? request.getRemarks() : "Approved by officer";
-        String auditDetail = remarks + " [Encrypted AES-256-GCM & stored in IPFS, CID: " + ipfsCid + "]";
+        String auditDetail = remarks + " [Encrypted AES-256-GCM, IPFS CID: " + ipfsCid +
+                ", Committed on-chain v" + commitResult.version() + " Tx: " + commitResult.txHash() + "]";
         auditService.logEvent(
                 currentUser.getEmail(),
                 "APPROVE",
@@ -287,8 +316,9 @@ public class LandRecordService {
                 auditDetail
         );
 
-        log.info("Record {} approved by officer {}. Encrypted in IPFS CID: {}", id, currentUser.getEmail(), ipfsCid);
-        return RecordResponse.fromEntity(saved);
+        log.info("Record {} approved and committed on-chain v{} by officer {}. CID: {}, TxHash: {}",
+                id, commitResult.version(), currentUser.getEmail(), ipfsCid, commitResult.txHash());
+        return RecordResponse.fromEntity(saved, commitResult.txHash());
     }
 
     @Transactional
