@@ -17,4 +17,8 @@ public interface RecordVersionRepository extends JpaRepository<RecordVersion, St
     Optional<RecordVersion> findTopByRecordIdOrderByVersionDesc(String recordId);
 
     Optional<RecordVersion> findByTxHash(String txHash);
+
+    Optional<RecordVersion> findTopBySha256OrderByCommittedAtDesc(String sha256);
+
+    List<RecordVersion> findBySha256(String sha256);
 }
