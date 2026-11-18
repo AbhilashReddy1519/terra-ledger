@@ -1,86 +1,83 @@
-import { useState } from 'react'
+/**
+ * App.jsx  — Root router
+ *
+ * Routes:
+ *   /              → redirects to /login (or role home if already logged in)
+ *   /login         → LoginPage
+ *   /register      → RegisterPage
+ *   /citizen       → CitizenPage   (CITIZEN | OFFICER | ADMIN)
+ *   /officer       → OfficerPage   (OFFICER | ADMIN)
+ *   /admin         → AdminPage     (ADMIN only)
+ *   /skeleton      → SkeletonPage  (M0 demo, no auth required)
+ *   *              → NotFoundPage
+ */
 
-const API = '/api/skeleton'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useAuth } from './context/AuthContext.jsx';
 
-export default function App() {
-  const [record, setRecord]   = useState(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError]     = useState(null)
+import LoginPage    from './pages/LoginPage.jsx';
+import RegisterPage from './pages/RegisterPage.jsx';
+import CitizenPage  from './pages/CitizenPage.jsx';
+import OfficerPage  from './pages/OfficerPage.jsx';
+import AdminPage    from './pages/AdminPage.jsx';
+import SkeletonPage from './pages/SkeletonPage.jsx';
+import NotFoundPage from './pages/NotFoundPage.jsx';
+import ProtectedRoute from './routes/ProtectedRoute.jsx';
 
-  async function commitRecord() {
-    setLoading(true); setError(null)
-    try {
-      const r = await fetch(`${API}/record`, { method: 'POST' })
-      if (!r.ok) throw new Error(`HTTP ${r.status}`)
-      const data = await r.json()
-      setRecord(data)
-    } catch (e) {
-      setError(e.message)
-    } finally {
-      setLoading(false)
-    }
+// Redirect logged-in users away from the root to their role home
+const ROLE_HOME = {
+  CITIZEN: '/citizen',
+  OFFICER: '/officer',
+  ADMIN:   '/admin',
+};
+
+function RootRedirect() {
+  const { isAuthenticated, role } = useAuth();
+  if (isAuthenticated && role && ROLE_HOME[role]) {
+    return <Navigate to={ROLE_HOME[role]} replace />;
   }
-
-  async function readRecord() {
-    if (!record?.recordId) return
-    setLoading(true); setError(null)
-    try {
-      const r = await fetch(`${API}/record/${encodeURIComponent(record.recordId)}`)
-      if (!r.ok) throw new Error(`HTTP ${r.status}`)
-      const data = await r.json()
-      setRecord(data)
-    } catch (e) {
-      setError(e.message)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  return (
-    <div style={{ fontFamily: 'sans-serif', maxWidth: 720, margin: '2rem auto', padding: '0 1rem' }}>
-      <h1>🌏 Terra Ledger — M0 Walking Skeleton</h1>
-      <p style={{ color: '#555' }}>
-        This page demonstrates the full path: React → Spring Boot → (chain/mock) → back.
-      </p>
-
-      <div style={{ display: 'flex', gap: '1rem', margin: '1.5rem 0' }}>
-        <button onClick={commitRecord} disabled={loading}
-          style={btnStyle('#2563eb')}>
-          {loading ? 'Working…' : '1. Commit hardcoded record'}
-        </button>
-        <button onClick={readRecord} disabled={loading || !record?.recordId}
-          style={btnStyle('#16a34a')}>
-          2. Read record back
-        </button>
-      </div>
-
-      {error && (
-        <pre style={{ background: '#fef2f2', border: '1px solid #fca5a5',
-                      padding: '1rem', borderRadius: 6, color: '#dc2626' }}>
-          Error: {error}
-        </pre>
-      )}
-
-      {record && (
-        <div style={{ background: '#f0fdf4', border: '1px solid #86efac',
-                      padding: '1rem', borderRadius: 6 }}>
-          <h3 style={{ marginTop: 0 }}>✅ Record from chain / API</h3>
-          <pre style={{ margin: 0, overflowX: 'auto' }}>
-            {JSON.stringify(record, null, 2)}
-          </pre>
-        </div>
-      )}
-
-      <footer style={{ marginTop: '3rem', color: '#9ca3af', fontSize: 13 }}>
-        M0 · Walking skeleton · no real auth or chain write yet
-      </footer>
-    </div>
-  )
+  return <Navigate to="/login" replace />;
 }
 
-function btnStyle(bg) {
-  return {
-    background: bg, color: '#fff', border: 'none', padding: '0.6rem 1.2rem',
-    borderRadius: 6, cursor: 'pointer', fontSize: 15, fontWeight: 600
-  }
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        {/* Public */}
+        <Route path="/"         element={<RootRedirect />} />
+        <Route path="/login"    element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/skeleton" element={<SkeletonPage />} />
+
+        {/* Protected – role-gated */}
+        <Route
+          path="/citizen"
+          element={
+            <ProtectedRoute allowedRoles={['CITIZEN', 'OFFICER', 'ADMIN']}>
+              <CitizenPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/officer"
+          element={
+            <ProtectedRoute allowedRoles={['OFFICER', 'ADMIN']}>
+              <OfficerPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <AdminPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* 404 */}
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
+    </BrowserRouter>
+  );
 }
