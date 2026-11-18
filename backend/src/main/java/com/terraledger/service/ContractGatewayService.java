@@ -309,6 +309,75 @@ public class ContractGatewayService {
     }
 
     /**
+     * Fetches a specific historical version of a record directly from the contract.
+     */
+    public ChainRecord getVersion(String recordUuid, int versionNumber) {
+        byte[] recordIdBytes = toBytes32(recordUuid);
+
+        if (isLiveChain && contractAddress != null && !contractAddress.isBlank()) {
+            try {
+                Function function = new Function(
+                        "getVersion",
+                        Arrays.asList(new Bytes32(recordIdBytes), new Uint256(versionNumber)),
+                        Arrays.asList(
+                                new TypeReference<Utf8String>() {},
+                                new TypeReference<Bytes32>() {},
+                                new TypeReference<Address>() {},
+                                new TypeReference<Uint256>() {}
+                        )
+                );
+
+                String encoded = FunctionEncoder.encode(function);
+                EthCall response = web3j.ethCall(
+                        Transaction.createEthCallTransaction(credentials.getAddress(), contractAddress, encoded),
+                        DefaultBlockParameterName.LATEST
+                ).send();
+
+                if (response.hasError() || response.getValue() == null || "0x".equals(response.getValue())) {
+                    throw new RuntimeException("Version " + versionNumber + " not found on chain for: " + recordUuid);
+                }
+
+                List<Type> results = FunctionReturnDecoder.decode(response.getValue(), function.getOutputParameters());
+                String cid = ((Utf8String) results.get(0)).getValue();
+                byte[] hashBytes = ((Bytes32) results.get(1)).getValue();
+                String sha256Hex = Numeric.toHexStringNoPrefix(hashBytes);
+                String approver = ((Address) results.get(2)).getValue();
+                long timestamp = ((Uint256) results.get(3)).getValue().longValue();
+
+                return new ChainRecord(versionNumber, cid, sha256Hex, approver, Instant.ofEpochSecond(timestamp));
+
+            } catch (Exception e) {
+                log.error("Failed to query getVersion for {} v{}: {}", recordUuid, versionNumber, e.getMessage());
+                throw new RuntimeException("Failed to read historical version from chain: " + e.getMessage(), e);
+            }
+        }
+
+        // Simulated fallback
+        List<SimulatedVersion> versions = simulatedLedger.get(recordUuid);
+        if (versions == null || versionNumber <= 0 || versionNumber > versions.size()) {
+            throw new RuntimeException("Version " + versionNumber + " not found in simulated ledger for " + recordUuid);
+        }
+        SimulatedVersion v = versions.get(versionNumber - 1);
+        return new ChainRecord(v.version(), v.cid(), v.sha256Hex(), v.approver(), v.at());
+    }
+
+    /**
+     * Gets the count of committed versions for a record.
+     */
+    public int getVersionCount(String recordUuid) {
+        byte[] recordIdBytes = toBytes32(recordUuid);
+        if (isLiveChain && contractAddress != null && !contractAddress.isBlank()) {
+            try {
+                return getVersionCountOnChain(recordIdBytes);
+            } catch (Exception e) {
+                log.warn("Failed to get version count on chain: {}", e.getMessage());
+            }
+        }
+        List<SimulatedVersion> versions = simulatedLedger.get(recordUuid);
+        return (versions != null) ? versions.size() : 0;
+    }
+
+    /**
      * Queries past RecordCommitted events emitted by LandRegistry.
      */
     public List<ChainRecordEvent> getAllCommittedEvents() {

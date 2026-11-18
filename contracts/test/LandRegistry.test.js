@@ -110,10 +110,18 @@ describe("LandRegistry", function () {
       expect(await registry.versionCount(RECORD_ID)).to.equal(2n);
     });
 
-    it("non-officer cannot addVersion", async function () {
+    it("non-officer and non-registrar cannot addVersion", async function () {
       await expect(
         registry.connect(nonOfficer).addVersion(RECORD_ID, CID2, SHA2)
-      ).to.be.revertedWithCustomError(registry, "NotOfficer");
+      ).to.be.revertedWithCustomError(registry, "NotAuthorized");
+    });
+
+    it("registrar can append a version (transfer/mutation)", async function () {
+      await registry.connect(admin).grantRegistrar(stranger.address);
+      await registry.connect(stranger).addVersion(RECORD_ID, CID2, SHA2);
+      const [version, cid, hash, approver] = await registry.getLatest(RECORD_ID);
+      expect(version).to.equal(2n);
+      expect(approver).to.equal(stranger.address);
     });
 
     it("addVersion on nonexistent record reverts RecordNotFound", async function () {

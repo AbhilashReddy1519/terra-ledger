@@ -158,4 +158,28 @@ public class RecordController {
         List<RecordVersion> versions = recordVersionRepository.findByRecordIdOrderByVersionAsc(id);
         return ResponseEntity.ok(versions);
     }
+
+    @GetMapping("/{id}/versions/{versionNumber}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<RecordVersion> getRecordVersion(
+            @PathVariable("id") String id,
+            @PathVariable("versionNumber") int versionNumber,
+            @AuthenticationPrincipal UserPrincipal currentUser) {
+        landRecordService.getRecord(id, currentUser);
+        RecordVersion version = recordVersionRepository.findByRecordIdAndVersion(id, versionNumber)
+                .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(
+                        org.springframework.http.HttpStatus.NOT_FOUND, "Version " + versionNumber + " not found"));
+        return ResponseEntity.ok(version);
+    }
+
+    @GetMapping("/{id}/chain/versions/{versionNumber}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ChainRecord> getChainRecordVersion(
+            @PathVariable("id") String id,
+            @PathVariable("versionNumber") int versionNumber,
+            @AuthenticationPrincipal UserPrincipal currentUser) {
+        landRecordService.getRecord(id, currentUser);
+        ChainRecord chainRecord = contractGatewayService.getVersion(id, versionNumber);
+        return ResponseEntity.ok(chainRecord);
+    }
 }

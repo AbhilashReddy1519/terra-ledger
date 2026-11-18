@@ -5,8 +5,8 @@
  *   /              → redirects to /login (or role home if already logged in)
  *   /login         → LoginPage
  *   /register      → RegisterPage
- *   /citizen       → CitizenPage   (CITIZEN | OFFICER | ADMIN)
- *   /officer       → OfficerPage   (OFFICER | ADMIN)
+ *   /citizen       → CitizenPage   (CITIZEN | OFFICER | REGISTRAR | ADMIN)
+ *   /officer       → OfficerPage   (OFFICER | REGISTRAR | ADMIN)
  *   /admin         → AdminPage     (ADMIN only)
  *   /skeleton      → SkeletonPage  (M0 demo, no auth required)
  *   *              → NotFoundPage
@@ -26,9 +26,10 @@ import ProtectedRoute from './routes/ProtectedRoute.jsx';
 
 // Redirect logged-in users away from the root to their role home
 const ROLE_HOME = {
-  CITIZEN: '/citizen',
-  OFFICER: '/officer',
-  ADMIN:   '/admin',
+  CITIZEN:   '/citizen',
+  OFFICER:   '/officer',
+  REGISTRAR: '/officer',
+  ADMIN:     '/admin',
 };
 
 function RootRedirect() {
@@ -53,7 +54,7 @@ export default function App() {
         <Route
           path="/citizen"
           element={
-            <ProtectedRoute allowedRoles={['CITIZEN', 'OFFICER', 'ADMIN']}>
+            <ProtectedRoute allowedRoles={['CITIZEN', 'OFFICER', 'REGISTRAR', 'ADMIN']}>
               <CitizenPage />
             </ProtectedRoute>
           }
@@ -61,7 +62,7 @@ export default function App() {
         <Route
           path="/officer"
           element={
-            <ProtectedRoute allowedRoles={['OFFICER', 'ADMIN']}>
+            <ProtectedRoute allowedRoles={['OFFICER', 'REGISTRAR', 'ADMIN']}>
               <OfficerPage />
             </ProtectedRoute>
           }
