@@ -28,6 +28,7 @@ contract LandRegistry {
     address public immutable admin;
 
     mapping(address => bool) public officers;
+    mapping(address => bool) public registrars;
 
     struct Version {
         uint256 version;
@@ -44,6 +45,8 @@ contract LandRegistry {
 
     event OfficerGranted(address indexed account);
     event OfficerRevoked(address indexed account);
+    event RegistrarGranted(address indexed account);
+    event RegistrarRevoked(address indexed account);
     event RecordCommitted(
         bytes32 indexed recordId,
         uint256 version,
@@ -56,6 +59,8 @@ contract LandRegistry {
 
     error NotAdmin();
     error NotOfficer();
+    error NotRegistrar();
+    error NotAuthorized();
     error RecordNotFound();
     error RecordAlreadyExists();
     error InvalidHash();
@@ -70,6 +75,16 @@ contract LandRegistry {
 
     modifier onlyOfficer() {
         if (!officers[msg.sender]) revert NotOfficer();
+        _;
+    }
+
+    modifier onlyRegistrar() {
+        if (!registrars[msg.sender]) revert NotRegistrar();
+        _;
+    }
+
+    modifier onlyOfficerOrRegistrar() {
+        if (!officers[msg.sender] && !registrars[msg.sender]) revert NotAuthorized();
         _;
     }
 
@@ -89,6 +104,16 @@ contract LandRegistry {
     function revokeOfficer(address a) external onlyAdmin {
         officers[a] = false;
         emit OfficerRevoked(a);
+    }
+
+    function grantRegistrar(address a) external onlyAdmin {
+        registrars[a] = true;
+        emit RegistrarGranted(a);
+    }
+
+    function revokeRegistrar(address a) external onlyAdmin {
+        registrars[a] = false;
+        emit RegistrarRevoked(a);
     }
 
     // ── Officer functions ──────────────────────────────────────────────────────
@@ -125,7 +150,7 @@ contract LandRegistry {
         bytes32 recordId,
         string calldata cid,
         bytes32 sha256Hash
-    ) external onlyOfficer {
+    ) external onlyOfficerOrRegistrar {
         uint256 len = _versions[recordId].length;
         if (len == 0) revert RecordNotFound();
         if (bytes(cid).length == 0) revert EmptyCID();
