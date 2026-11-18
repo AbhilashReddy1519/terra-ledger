@@ -21,6 +21,7 @@ public class RecordResponse {
     private Long fileSize;
     private String sha256Hash;
     private String ipfsCid;
+    private String txHash;
     private Integer currentVersion;
     private Instant createdAt;
     private Instant updatedAt;
@@ -29,6 +30,10 @@ public class RecordResponse {
     public RecordResponse() {}
 
     public static RecordResponse fromEntity(LandRecord record) {
+        return fromEntity(record, null);
+    }
+
+    public static RecordResponse fromEntity(LandRecord record, String txHash) {
         RecordResponse resp = new RecordResponse();
         resp.setId(record.getId());
         resp.setUploadedBy(record.getUploadedBy());
@@ -43,6 +48,7 @@ public class RecordResponse {
         resp.setFileSize(record.getFileSize());
         resp.setSha256Hash(record.getSha256Hash());
         resp.setIpfsCid(record.getIpfsCid());
+        resp.setTxHash(txHash);
         resp.setCurrentVersion(record.getCurrentVersion());
         resp.setCreatedAt(record.getCreatedAt());
         resp.setUpdatedAt(record.getUpdatedAt());
@@ -98,6 +104,9 @@ public class RecordResponse {
 
     public String getIpfsCid() { return ipfsCid; }
     public void setIpfsCid(String ipfsCid) { this.ipfsCid = ipfsCid; }
+
+    public String getTxHash() { return txHash; }
+    public void setTxHash(String txHash) { this.txHash = txHash; }
 
     public Integer getCurrentVersion() { return currentVersion; }
     public void setCurrentVersion(Integer currentVersion) { this.currentVersion = currentVersion; }

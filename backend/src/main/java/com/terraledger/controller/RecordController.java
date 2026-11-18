@@ -1,10 +1,14 @@
 package com.terraledger.controller;
 
 import com.terraledger.domain.RecordStatus;
+import com.terraledger.domain.RecordVersion;
 import com.terraledger.dto.*;
+import com.terraledger.repository.RecordVersionRepository;
 import com.terraledger.security.UserPrincipal;
 import com.terraledger.service.AuditService;
+import com.terraledger.service.ContractGatewayService;
 import com.terraledger.service.LandRecordService;
+import com.terraledger.service.ReconcileService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -22,10 +26,20 @@ public class RecordController {
 
     private final LandRecordService landRecordService;
     private final AuditService auditService;
+    private final ReconcileService reconcileService;
+    private final ContractGatewayService contractGatewayService;
+    private final RecordVersionRepository recordVersionRepository;
 
-    public RecordController(LandRecordService landRecordService, AuditService auditService) {
+    public RecordController(LandRecordService landRecordService,
+                            AuditService auditService,
+                            ReconcileService reconcileService,
+                            ContractGatewayService contractGatewayService,
+                            RecordVersionRepository recordVersionRepository) {
         this.landRecordService = landRecordService;
         this.auditService = auditService;
+        this.reconcileService = reconcileService;
+        this.contractGatewayService = contractGatewayService;
+        this.recordVersionRepository = recordVersionRepository;
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -116,5 +130,32 @@ public class RecordController {
             @AuthenticationPrincipal UserPrincipal currentUser) {
         StorageVerificationResponse response = landRecordService.verifyStorageIntegrity(id, currentUser);
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/reconcile")
+    @PreAuthorize("hasAnyRole('OFFICER', 'ADMIN')")
+    public ResponseEntity<ReconcileReport> triggerReconciliation() {
+        ReconcileReport report = reconcileService.reconcileAll();
+        return ResponseEntity.ok(report);
+    }
+
+    @GetMapping("/{id}/chain")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ChainRecord> getChainRecord(
+            @PathVariable("id") String id,
+            @AuthenticationPrincipal UserPrincipal currentUser) {
+        landRecordService.getRecord(id, currentUser);
+        ChainRecord chainRecord = contractGatewayService.getLatest(id);
+        return ResponseEntity.ok(chainRecord);
+    }
+
+    @GetMapping("/{id}/versions")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<RecordVersion>> getRecordVersions(
+            @PathVariable("id") String id,
+            @AuthenticationPrincipal UserPrincipal currentUser) {
+        landRecordService.getRecord(id, currentUser);
+        List<RecordVersion> versions = recordVersionRepository.findByRecordIdOrderByVersionAsc(id);
+        return ResponseEntity.ok(versions);
     }
 }
