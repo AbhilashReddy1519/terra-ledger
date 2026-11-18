@@ -7,12 +7,14 @@
  * CSS imports order:
  *  1. tokens.css  — CSS variables & global reset
  *  2. components.css — reusable component classes
+ *  3. index.css   — legacy M6 variables (kept for compatibility)
  */
 
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './styles/tokens.css';
 import './styles/components.css';
+import './index.css';
 import { AuthProvider } from './context/AuthContext.jsx';
 import App from './App.jsx';
 
