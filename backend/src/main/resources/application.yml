@@ -30,6 +30,7 @@ app:
   hardhat:
     rpc-url: ${HARDHAT_RPC_URL:http://localhost:8545}
     private-key: ${BACKEND_WALLET_PRIVATE_KEY:0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80}
+    contract-address: ${LAND_REGISTRY_ADDRESS:}
   ipfs:
     api-url: ${IPFS_API_URL:http://localhost:5001}
   encryption:

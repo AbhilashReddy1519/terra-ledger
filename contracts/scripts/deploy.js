@@ -11,7 +11,10 @@ async function main() {
   const address = await registry.getAddress();
   console.log("LandRegistry deployed to:", address);
 
-  // Grant the second Hardhat account officer role (used by backend in dev)
+  // Grant deployer and second Hardhat account officer roles
+  await registry.grantOfficer(deployer.address);
+  console.log("Officer granted to deployer:", deployer.address);
+
   const signers = await ethers.getSigners();
   if (signers.length > 1) {
     const officerAddr = signers[1].address;

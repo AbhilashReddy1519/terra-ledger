@@ -145,7 +145,7 @@ public class StorageAndHashIntegrationTest {
         RecordResponse approveResp = objectMapper.readValue(approveRespJson, RecordResponse.class);
         String ipfsCid = approveResp.getIpfsCid();
         assertThat(ipfsCid).isNotBlank();
-        assertThat(approveResp.getStatus().name()).isEqualTo("APPROVED");
+        assertThat(approveResp.getStatus()).isIn(com.terraledger.domain.RecordStatus.APPROVED, com.terraledger.domain.RecordStatus.COMMITTED);
 
         // 3. Directly inspect IPFS content: verify IPFS stores CIPHERTEXT, not plaintext
         byte[] rawIpfsBytes = ipfsClientService.cat(ipfsCid);
